@@ -1,0 +1,59 @@
+name: 发布硬币实验室
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: 检查并打包网页
+    runs-on: ubuntu-latest
+    steps:
+      - name: 读取代码
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: 检查语法和游戏规则
+        run: |
+          node --check app.js
+          node --check engine.js
+          node --test tests/*.test.mjs
+
+      - name: 整理网页文件
+        run: |
+          mkdir -p _site/assets
+          cp index.html styles.css app.js engine.js _site/
+          cp assets/icon.svg _site/assets/
+          touch _site/.nojekyll
+
+      - name: 上传网页文件
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    name: 发布网页
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 配置 GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: 发布到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
