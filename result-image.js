@@ -59,8 +59,8 @@ export function drawResultImage(ctx, { playerName, title, reason, stats, series,
   const gap = 10, cardWidth = (496 - gap * 2) / 3;
   const metrics = [
     [format(stats.count), '投掷次数'],
-    [stats.count ? `${Math.round(stats.winRate * 100)}%` : '—', '猜中比例'],
-    [stats.count ? `${Math.round(stats.headsRate * 100)}%` : '—', '正面出现比例'],
+    [stats.count ? `${Math.round(stats.wins * 100 / stats.count)}%` : '—', '猜中比例'],
+    [stats.count ? `${Math.round(stats.heads * 100 / stats.count)}%` : '—', '正面出现比例'],
   ];
   metrics.forEach(([value, label], index) => {
     const x = 52 + index * (cardWidth + gap);

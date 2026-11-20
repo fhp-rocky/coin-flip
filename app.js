@@ -202,8 +202,8 @@ function openResults() {
   $('final-balance').textContent = number(game.balance);
   setProfit($('final-profit'), stats.profit);
   $('final-count').textContent = number(stats.count);
-  $('final-win-rate').textContent = stats.count ? `${Math.round(stats.winRate * 100)}%` : '—';
-  $('final-heads-rate').textContent = stats.count ? `${Math.round(stats.headsRate * 100)}%` : '—';
+  $('final-win-rate').textContent = stats.count ? `${Math.round(stats.wins * 100 / stats.count)}%` : '—';
+  $('final-heads-rate').textContent = stats.count ? `${Math.round(stats.heads * 100 / stats.count)}%` : '—';
   for (const [name, values] of Object.entries(series)) $(name === 'player' ? 'strategy-player' : `strategy-${name}`).textContent = number(values.at(-1));
   $('result-download').disabled = stats.count === 0;
   renderChart($('result-chart'), true);
