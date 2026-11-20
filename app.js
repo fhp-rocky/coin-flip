@@ -1,5 +1,6 @@
 import { createGame, startGame, finishGame, checkTime, placeBet, fractionBet,
   restoreGame, getStats, getSeries, DURATION_MS, INITIAL_BALANCE } from './engine.js';
+import { RESULT_IMAGE, drawResultImage } from './result-image.js?v=results-1';
 
 const $ = id => document.getElementById(id);
 const KEY = 'coin-lab:game:v1';
@@ -17,6 +18,9 @@ let storageWorks = true;
 let lastInput = '20';
 let playerName = '';
 let entered = false;
+let resultImage = null;
+let imageGeneration = 0;
+let imageGame = null;
 
 try {
   playerName = (sessionStorage.getItem(NAME_KEY) || '').trim().slice(0, 20);
@@ -203,7 +207,63 @@ function openResults() {
   for (const [name, values] of Object.entries(series)) $(name === 'player' ? 'strategy-player' : `strategy-${name}`).textContent = number(values.at(-1));
   $('result-download').disabled = stats.count === 0;
   renderChart($('result-chart'), true);
+  if (imageGame !== game || !resultImage) prepareResultImage();
   if (!$('result-dialog').open) $('result-dialog').showModal();
+}
+
+function clearResultImage() {
+  imageGeneration++;
+  if (resultImage) URL.revokeObjectURL(resultImage.url);
+  resultImage = null; imageGame = null;
+  $('result-preview-image').removeAttribute('src');
+  $('preview-image-download').removeAttribute('href');
+  $('preview-image-button').hidden = true;
+}
+
+function prepareResultImage() {
+  clearResultImage();
+  const generation = imageGeneration;
+  const snapshot = game;
+  $('save-result-button').disabled = true;
+  $('save-result-label').textContent = '正在生成图片…';
+  $('image-save-message').textContent = '';
+  const fail = () => {
+    if (generation !== imageGeneration) return;
+    $('save-result-button').disabled = false;
+    $('save-result-label').textContent = '重新生成结果图片';
+    $('image-save-message').textContent = '图片暂时无法生成，请点击重试。';
+  };
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = RESULT_IMAGE.width * RESULT_IMAGE.scale;
+    canvas.height = RESULT_IMAGE.height * RESULT_IMAGE.scale;
+    const context = canvas.getContext('2d');
+    if (!context) { fail(); return; }
+    drawResultImage(context, { playerName, title: $('result-title').textContent,
+      reason: $('end-reason').textContent, stats: getStats(snapshot),
+      series: getSeries(snapshot), finishedAt: snapshot.finishedAt });
+    canvas.toBlob(blob => {
+      if (generation !== imageGeneration) return;
+      if (!blob) { fail(); return; }
+      const url = URL.createObjectURL(blob);
+      const filename = `硬币实验室-结果-${new Date(snapshot.finishedAt).toISOString().slice(0, 10)}.png`;
+      resultImage = { url, filename }; imageGame = snapshot;
+      $('result-preview-image').src = url;
+      $('preview-image-download').href = url;
+      $('preview-image-download').download = filename;
+      $('preview-image-button').hidden = false;
+      $('save-result-button').disabled = false;
+      $('save-result-label').textContent = '保存结果';
+    }, 'image/png');
+  } catch { fail(); }
+}
+
+function saveResultImage() {
+  if (!resultImage) { prepareResultImage(); return; }
+  const link = document.createElement('a');
+  link.href = resultImage.url; link.download = resultImage.filename;
+  document.body.append(link); link.click(); link.remove();
+  $('image-save-message').textContent = '已发起图片下载。手机也可点“查看图片”后长按保存。';
 }
 
 function completeFlip() {
@@ -354,7 +414,9 @@ $('confirm-end').addEventListener('click', () => {
   save(); render(); openResults();
 });
 $('restart-button').addEventListener('click', () => {
+  closeModal('result-image-dialog');
   closeModal('result-dialog');
+  clearResultImage();
   game = createGame(); selectedSide = 'heads'; busy = false; showAllHistory = false; entered = false;
   $('player-input').value = playerName;
   $('name-error').textContent = '';
@@ -367,6 +429,10 @@ $('restart-button').addEventListener('click', () => {
 });
 $('download-button').addEventListener('click', downloadResults);
 $('result-download').addEventListener('click', downloadResults);
+$('save-result-button').addEventListener('click', saveResultImage);
+$('preview-image-button').addEventListener('click', () => {
+  if (resultImage) $('result-image-dialog').showModal();
+});
 $('more-history').addEventListener('click', () => { showAllHistory = !showAllHistory; renderHistory(); });
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') { if (busy) completeFlip(); tick(); }

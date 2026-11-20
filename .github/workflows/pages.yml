@@ -26,12 +26,13 @@ jobs:
         run: |
           node --check app.js
           node --check engine.js
+          node --check result-image.js
           node --test tests/*.test.mjs
 
       - name: 整理网页文件
         run: |
           mkdir -p _site/assets
-          cp index.html styles.css app.js engine.js _site/
+          cp index.html styles.css app.js engine.js result-image.js _site/
           cp assets/icon.svg _site/assets/
           touch _site/.nojekyll
 

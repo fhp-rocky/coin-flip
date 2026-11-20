@@ -13,6 +13,7 @@ const assets = new Map([
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
   ['/engine.js', ['engine.js', 'text/javascript; charset=utf-8']],
+  ['/result-image.js', ['result-image.js', 'text/javascript; charset=utf-8']],
   ['/assets/icon.svg', ['assets/icon.svg', 'image/svg+xml']],
 ]);
 const server = createServer(async (req, res) => {
