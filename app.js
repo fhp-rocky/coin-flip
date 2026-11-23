@@ -1,21 +1,25 @@
-import { createGame, startGame, finishGame, checkTime, placeBet, fractionBet,
-  restoreGame, getStats, getSeries, DURATION_MS, INITIAL_BALANCE } from './engine.js';
-import { RESULT_IMAGE, drawResultImage } from './result-image.js?v=results-1';
+import { createGame, startGame, finishGame, checkTime, placeBet,
+  restoreGame, getStats, getSeries, INITIAL_BALANCE } from './engine.js?v=release-20261124';
+import { RESULT_IMAGE, drawResultImage } from './result-image.js?v=release-20261124';
 
 const $ = id => document.getElementById(id);
+// 沿用正式版的进度键，兼容旧对局；与测试版进度分开。
 const KEY = 'coin-lab:game:v1';
 const NAME_KEY = 'coin-lab:player:v1';
+const FLIP_DELAY_MS = 3500;
 const number = value => value.toLocaleString('zh-CN');
 const sideName = side => side === 'heads' ? '正面' : '反面';
 const signed = value => `${value > 0 ? '+' : value < 0 ? '−' : ''}${number(Math.abs(value))}`;
 let game = createGame();
 let selectedSide = 'heads';
 let busy = false;
+let flipPhase = 'idle';
 let showAllHistory = false;
 let rotation = 0;
 let animationTimeout;
+let revealAt = 0;
 let storageWorks = true;
-let lastInput = '20';
+let lastInput = '1';
 let playerName = '';
 let entered = false;
 let resultImage = null;
@@ -27,11 +31,30 @@ try {
   const raw = sessionStorage.getItem(KEY);
   if (raw) {
     const restored = restoreGame(raw);
-    if (restored) game = restored;
+    if (restored) {
+      game = restored;
+      const saved = JSON.parse(raw);
+      const savedRevealAt = saved.revealAt;
+      if (game.rounds.length && Number.isSafeInteger(savedRevealAt)
+        && savedRevealAt >= game.rounds.at(-1).at && savedRevealAt <= Date.now() + FLIP_DELAY_MS
+        && (saved.flipPending === true || savedRevealAt > Date.now())) {
+        busy = true;
+        revealAt = savedRevealAt;
+      }
+    }
     else storageNotice('上次的进度无法读取，已准备好一局新的挑战。');
   }
 } catch { storageWorks = false; }
 entered = Boolean(playerName && game.status !== 'ready');
+
+function updateDuration() {
+  const minutes = entered ? game.durationMs / 60000 : Number($('duration-range').value);
+  $('duration-value').textContent = `${minutes} 分钟`;
+  $('duration-range').setAttribute('aria-valuetext', `${minutes} 分钟`);
+  $('duration-range').style.setProperty('--range-fill', `${(minutes - 5) / 5 * 100}%`);
+  $('start-clock').textContent = `${String(minutes).padStart(2, '0')}:00`;
+  for (const label of document.querySelectorAll('[data-duration-minutes]')) label.textContent = minutes;
+}
 
 function renderScreen() {
   $('welcome-screen').hidden = entered;
@@ -41,6 +64,7 @@ function renderScreen() {
   $('player-name').textContent = playerName;
   $('player-name').title = playerName;
   document.body.classList.toggle('game-entered', entered);
+  updateDuration();
 }
 
 function storageNotice(message) {
@@ -50,7 +74,8 @@ function storageNotice(message) {
 
 function save() {
   try {
-    sessionStorage.setItem(KEY, JSON.stringify(game));
+    sessionStorage.setItem(KEY, JSON.stringify({ ...game,
+      revealAt: busy ? revealAt : null, flipPending: busy }));
     sessionStorage.setItem(NAME_KEY, playerName);
   }
   catch {
@@ -82,14 +107,18 @@ function updateBet(showError = true) {
   const error = finished ? '' : inputError();
   $('bet-input').setAttribute('aria-invalid', String(Boolean(error && showError)));
   $('bet-error').textContent = showError ? error : '';
-  $('bet-share').textContent = Number.isFinite(value) && game.balance > 0
-    ? `占余额 ${Math.round(value / game.balance * 100)}%` : '每次调整 1 枚';
+  $('bet-share').textContent = '每次调整 1 枚';
+  const max = Math.max(1, game.balance);
+  const sliderValue = Number.isSafeInteger(value) ? Math.max(1, Math.min(max, value)) : 1;
+  $('bet-range').max = String(max);
+  $('bet-range').value = String(sliderValue);
+  $('bet-range').disabled = busy || finished || game.balance <= 1;
+  $('bet-range').setAttribute('aria-valuetext', `${sliderValue} 枚金币`);
+  $('bet-range').style.setProperty('--range-fill', `${max > 1 ? (sliderValue - 1) / (max - 1) * 100 : 0}%`);
+  $('bet-maximum').textContent = `最多 ${number(game.balance)} 枚`;
   $('minus-button').disabled = busy || finished || value <= 1;
   $('plus-button').disabled = busy || finished || value >= game.balance;
   $('flip-button').disabled = busy || (game.status === 'playing' && Boolean(error));
-  for (const button of document.querySelectorAll('[data-fraction]')) {
-    button.classList.toggle('active', value === fractionBet(game.balance, Number(button.dataset.fraction)) && game.balance > 0);
-  }
 }
 
 function setProfit(element, value, initial = false) {
@@ -98,13 +127,13 @@ function setProfit(element, value, initial = false) {
 }
 
 function renderTimer() {
-  const remaining = game.status === 'ready' ? DURATION_MS
+  const remaining = game.status === 'ready' ? game.durationMs
     : Math.max(0, game.endsAt - (game.status === 'finished' ? game.finishedAt : Date.now()));
   const seconds = Math.ceil(remaining / 1000);
   const minutes = Math.floor(seconds / 60);
   $('timer').textContent = `${String(minutes).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
   $('timer').setAttribute('aria-label', `剩余时间 ${minutes} 分 ${seconds % 60} 秒`);
-  $('time-progress').style.transform = `scaleX(${Math.min(1, remaining / DURATION_MS)})`;
+  $('time-progress').style.transform = `scaleX(${Math.min(1, remaining / game.durationMs)})`;
   document.querySelector('.score-card').classList.toggle('timer-urgent', seconds <= 60 && game.status === 'playing');
 }
 
@@ -134,7 +163,7 @@ function renderHistory() {
   $('history-count').textContent = number(count);
   $('history-empty').hidden = count > 0;
   $('history-table-wrap').hidden = count === 0;
-  $('download-button').disabled = count === 0;
+  $('download-button').disabled = busy || count === 0;
   $('more-history').hidden = count <= 8;
   $('more-history').textContent = showAllHistory ? '收起记录' : `查看全部 ${number(count)} 次记录`;
   const fragment = document.createDocumentFragment();
@@ -170,7 +199,8 @@ function render() {
   $('play-footnote').textContent = game.status === 'ready' ? '点击开始后计时 · 猜中赚取等额金币' : finished ? '每一次选择，都是下一次的经验' : '每次独立随机 · 猜中赚取等额金币';
   $('chart-caption').textContent = stats.count ? `${number(stats.count)} 次选择` : '从 100 开始';
   $('bet-input').disabled = busy || finished;
-  for (const button of document.querySelectorAll('[data-side], [data-fraction]')) button.disabled = busy || finished;
+  for (const button of document.querySelectorAll('[data-side]')) button.disabled = busy || finished;
+  $('more-history').disabled = busy;
   for (const button of document.querySelectorAll('[data-side]')) {
     button.classList.toggle('selected', button.dataset.side === selectedSide);
     button.setAttribute('aria-pressed', String(button.dataset.side === selectedSide));
@@ -197,7 +227,7 @@ function openResults() {
   const stats = getStats(game);
   const series = getSeries(game);
   $('result-player').textContent = `${playerName}的本次战绩`;
-  $('end-reason').textContent = { time: '十分钟，挑战完成', bankrupt: '金币用完了，这次挑战结束', manual: '你完成了本次挑战' }[game.reason] || '挑战完成';
+  $('end-reason').textContent = { time: `${game.durationMs / 60000} 分钟，挑战完成`, bankrupt: '金币用完了，这次挑战结束', manual: '你完成了本次挑战' }[game.reason] || '挑战完成';
   $('result-title').textContent = stats.profit > 0 ? '不错，让好运有了回报。' : stats.profit === 0 ? '回到起点，也收获了经验。' : '每一次尝试，都有收获。';
   $('final-balance').textContent = number(game.balance);
   setProfit($('final-profit'), stats.profit);
@@ -241,7 +271,7 @@ function prepareResultImage() {
     if (!context) { fail(); return; }
     drawResultImage(context, { playerName, title: $('result-title').textContent,
       reason: $('end-reason').textContent, stats: getStats(snapshot),
-      series: getSeries(snapshot), finishedAt: snapshot.finishedAt });
+      series: getSeries(snapshot), finishedAt: snapshot.finishedAt, durationMinutes: snapshot.durationMs / 60000 });
     canvas.toBlob(blob => {
       if (generation !== imageGeneration) return;
       if (!blob) { fail(); return; }
@@ -267,20 +297,54 @@ function saveResultImage() {
 }
 
 function completeFlip() {
-  if (!busy) return;
+  if (!busy || flipPhase === 'result') return;
   clearTimeout(animationTimeout);
-  busy = false;
+  // 返回前台不会提前揭晓；即使降低动态效果，仍等待完整的 3.5 秒。
+  const remaining = revealAt - Date.now();
+  if (remaining > 0) { animationTimeout = setTimeout(completeFlip, remaining); return; }
+  flipPhase = 'result';
   $('coin-wrap').classList.remove('flipping');
+  $('coin-stage').classList.remove('is-flipping');
   const last = game.rounds.at(-1);
   if (last) {
+    const won = last.delta > 0;
     setCoin(last.face);
-    setMessage(`${sideName(last.face)}！${last.delta > 0 ? '猜中了' : '下次再试'}，${signed(last.delta)} 枚`, last.delta > 0 ? 'win' : 'loss');
+    setMessage(`${sideName(last.face)}！${won ? '猜中了' : '下次再试'}，${signed(last.delta)} 枚`, won ? 'win' : 'loss');
+    $('flip-dialog').classList.add('is-result');
+    $('flip-dialog').classList.toggle('is-win', won);
+    $('flip-dialog').classList.toggle('is-loss', !won);
+    $('flip-title').textContent = won ? '猜中了！' : '这次没猜中';
+    $('flip-caption').textContent = `${sideName(last.face)}落地 · 你押的是${sideName(last.side)}`;
+    $('flip-delta').textContent = `${signed(last.delta)} 枚金币`;
+    $('flip-balance').textContent = `当前余额 ${number(game.balance)} 枚`;
+    $('flip-result').hidden = false;
+    $('flip-hint').hidden = true;
   }
   const checked = checkTime(game);
-  if (checked !== game) { game = checked; save(); }
+  if (checked !== game) game = checked;
+  save();
   if (game.balance > 0 && amountValue() > game.balance) $('bet-input').value = String(game.balance);
   render();
+  updateFlipContinue();
+  $('flip-continue').focus({ preventScroll: true });
+}
+
+function updateFlipContinue() {
+  $('flip-continue').textContent = game.status === 'finished' ? '查看本局结果' : '继续挑战';
+}
+
+function dismissFlipResult() {
+  if (!busy || flipPhase !== 'result') return;
+  busy = false;
+  flipPhase = 'idle';
+  closeModal('flip-dialog');
+  document.body.classList.remove('is-revealing');
+  $('coin-home').append($('coin-stage'));
+  game = checkTime(game);
+  save();
+  render();
   if (game.status === 'finished') openResults();
+  else $('flip-button').focus({ preventScroll: true });
 }
 
 function tick() {
@@ -290,6 +354,7 @@ function tick() {
     game = checked;
     save();
     if (!busy) { render(); openResults(); }
+    else if (flipPhase === 'result') updateFlipContinue();
   }
   renderTimer();
 }
@@ -309,24 +374,42 @@ function flip() {
   try {
     const beforeCount = game.rounds.length;
     game = placeBet(game, { side: selectedSide, amount: amountValue() });
-    save();
-    if (game.rounds.length === beforeCount) { render(); openResults(); return; }
+    if (game.rounds.length === beforeCount) { save(); render(); openResults(); return; }
     busy = true;
-    // 先持久化结算结果，再播放动画；动画期间禁用所有下注操作。
-    const last = game.rounds.at(-1);
-    const desired = last.face === 'heads' ? 0 : 180;
-    rotation = Math.ceil(rotation / 360) * 360 + 1440 + desired;
-    $('coin').classList.add('spinning');
-    $('coin').style.transform = `rotateY(${rotation}deg) rotateZ(-10deg)`;
-    $('coin-wrap').classList.add('flipping');
-    $('flip-label').textContent = '硬币翻转中…';
-    $('flip-button').disabled = true;
-    $('end-button').disabled = true;
-    $('bet-input').disabled = true;
-    for (const button of document.querySelectorAll('[data-side], [data-fraction], #minus-button, #plus-button')) button.disabled = true;
-    setMessage('好运正在落地…');
-    animationTimeout = setTimeout(completeFlip, matchMedia('(prefers-reduced-motion: reduce)').matches ? 100 : 760);
+    // 先保存结算结果与揭晓时间；刷新后也需等待，不重复抽样。
+    revealAt = Date.now() + FLIP_DELAY_MS;
+    save();
+    showFlipEffect();
   } catch (error) { $('bet-error').textContent = error.message; }
+}
+
+function showFlipEffect() {
+  const remaining = Math.max(0, revealAt - Date.now());
+  const last = game.rounds.at(-1);
+  flipPhase = 'spinning';
+  $('flip-dialog').classList.remove('is-result');
+  $('flip-dialog').classList.remove('is-win');
+  $('flip-dialog').classList.remove('is-loss');
+  $('flip-title').textContent = '让好运，落定。';
+  $('flip-result').hidden = true;
+  $('flip-hint').hidden = false;
+  $('coin-stage').style.setProperty('--flip-duration', `${remaining}ms`);
+  $('coin-stage').classList.add('is-flipping');
+  $('coin').classList.add('spinning');
+  $('coin-wrap').classList.add('flipping');
+  $('flip-round').textContent = `第 ${number(game.rounds.length)} 次投掷`;
+  $('flip-caption').textContent = `押${sideName(last.side)} · ${number(last.amount)} 枚金币`;
+  $('flip-stage-host').append($('coin-stage'));
+  document.body.classList.add('is-revealing');
+  $('flip-dialog').showModal();
+  $('flip-label').textContent = '硬币翻转中…';
+  $('flip-button').disabled = true;
+  $('end-button').disabled = true;
+  $('bet-input').disabled = true;
+  for (const button of document.querySelectorAll('[data-side], #minus-button, #plus-button, #bet-range, #download-button, #more-history')) button.disabled = true;
+  setMessage('硬币正在空中，好运即将落地…');
+  if (remaining > 0) animationTimeout = setTimeout(completeFlip, remaining);
+  else completeFlip();
 }
 
 function downloadResults() {
@@ -359,10 +442,10 @@ $('welcome-form').addEventListener('submit', event => {
   }
   if (entered) return;
   playerName = name;
-  game = startGame(createGame());
+  game = startGame(createGame(Number($('duration-range').value)));
   entered = true;
   selectedSide = 'heads'; busy = false; showAllHistory = false;
-  $('bet-input').value = '20';
+  $('bet-input').value = '1';
   setCoin('heads');
   save(); render();
   setMessage('挑战开始！选好金额，扔出第一枚硬币。');
@@ -373,9 +456,16 @@ $('player-input').addEventListener('input', () => {
   $('name-error').textContent = '';
   $('player-input').removeAttribute('aria-invalid');
 });
+$('duration-range').addEventListener('input', updateDuration);
 
 $('flip-button').addEventListener('click', flip);
+$('flip-continue').addEventListener('click', dismissFlipResult);
 $('bet-input').addEventListener('input', () => updateBet());
+$('bet-range').addEventListener('input', () => {
+  if (busy || game.status === 'finished') return;
+  $('bet-input').value = $('bet-range').value;
+  updateBet();
+});
 $('bet-input').addEventListener('focus', () => { lastInput = $('bet-input').value; });
 $('bet-input').addEventListener('keydown', event => {
   if (event.key === 'Enter') { event.preventDefault(); $('bet-input').blur(); }
@@ -396,14 +486,13 @@ for (const button of document.querySelectorAll('[data-side]')) button.addEventLi
     option.setAttribute('aria-pressed', String(option === button));
   }
 });
-for (const button of document.querySelectorAll('[data-fraction]')) button.addEventListener('click', () => {
-  if (busy || game.status === 'finished') return;
-  $('bet-input').value = String(fractionBet(game.balance, Number(button.dataset.fraction)));
-  updateBet();
-});
 $('rules-button').addEventListener('click', () => $('rules-dialog').showModal());
+$('flip-dialog').addEventListener('cancel', event => {
+  if (busy) event.preventDefault();
+});
 for (const button of document.querySelectorAll('[data-close]')) button.addEventListener('click', () => closeModal(button.dataset.close));
 for (const dialog of document.querySelectorAll('dialog')) dialog.addEventListener('click', event => {
+  if (dialog.id === 'flip-dialog') return;
   const rect = dialog.getBoundingClientRect();
   if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close();
 });
@@ -417,11 +506,11 @@ $('restart-button').addEventListener('click', () => {
   closeModal('result-image-dialog');
   closeModal('result-dialog');
   clearResultImage();
-  game = createGame(); selectedSide = 'heads'; busy = false; showAllHistory = false; entered = false;
+  game = createGame(Number($('duration-range').value)); selectedSide = 'heads'; busy = false; showAllHistory = false; entered = false;
   $('player-input').value = playerName;
   $('name-error').textContent = '';
   $('player-input').removeAttribute('aria-invalid');
-  $('bet-input').value = '20'; setCoin('heads');
+  $('bet-input').value = '1'; setCoin('heads');
   setMessage('新的机会，从这枚硬币开始。');
   save(); render();
   $('player-input').focus({ preventScroll: true });
@@ -442,6 +531,7 @@ setInterval(tick, 250);
 
 if (!storageWorks) storageNotice('当前浏览器不支持保存进度。可以正常游戏，但刷新页面会重新开始。');
 $('player-input').value = playerName;
+$('duration-range').value = String(game.durationMs / 60000);
 if (game.rounds.length) {
   const last = game.rounds.at(-1);
   selectedSide = last.side;
@@ -450,4 +540,5 @@ if (game.rounds.length) {
   setMessage(game.status === 'finished' ? '本局已结束，看看你的策略表现。' : '已恢复本局进度，继续你的挑战。');
 } else if (game.status === 'playing') setMessage('已恢复本局进度，倒计时继续。');
 render();
-if (game.status === 'finished') openResults();
+if (busy) showFlipEffect();
+else if (game.status === 'finished') openResults();

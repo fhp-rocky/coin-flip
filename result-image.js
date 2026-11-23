@@ -1,7 +1,7 @@
 // 只用原生 Canvas 绘制统计卡片，不依赖网页截图或外部图片。
 export const RESULT_IMAGE = { width: 600, height: 980, scale: 2 };
 
-export function drawResultImage(ctx, { playerName, title, reason, stats, series, finishedAt }) {
+export function drawResultImage(ctx, { playerName, title, reason, stats, series, finishedAt, durationMinutes = 5 }) {
   const colors = { text: '#edf2f8', muted: '#9aa9bd', gold: '#edc47e', green: '#75dfb6', red: '#ff9a9d', purple: '#b4a4ed' };
   const family = '"PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif';
   const format = value => value.toLocaleString('zh-CN');
@@ -43,7 +43,7 @@ export function drawResultImage(ctx, { playerName, title, reason, stats, series,
 
   dot(67, 63, 16, colors.gold); text('正', 67, 69, 17, '#78541e', 600, 'center');
   text('硬币实验室', 96, 70, 23, colors.text, 600);
-  text('十分钟挑战 · 结果留念', 548, 68, 12, colors.muted, 400, 'right');
+  text(`${durationMinutes} 分钟挑战 · 结果留念`, 548, 68, 12, colors.muted, 400, 'right');
   line(52, 96, 548, 96, '#2b384c');
   fitted(`${playerName}的本次战绩`, 52, 134, 496, 18, colors.gold);
   fitted(title, 52, 176, 496, 27);

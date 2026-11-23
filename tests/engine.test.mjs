@@ -1,20 +1,47 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame, startGame, finishGame, checkTime, placeBet, randomFace,
-  fractionBet, getStats, getSeries, restoreGame, DURATION_MS } from '../engine.js';
+  fractionBet, getStats, getSeries, restoreGame, DURATION_MS, DURATION_OPTIONS } from '../engine.js';
 
 const startedAt = 1_800_000_000_000;
 const active = () => startGame(createGame(), startedAt);
 const bet = (game, amount, face = 'heads', side = 'heads', now = startedAt + 1000) =>
   placeBet(game, { side, amount, now, draw: () => face });
 
-test('初始 100 枚，开始后精确计时 10 分钟，重复开始不重置', () => {
+test('初始 100 枚，默认精确计时 5 分钟，重复开始不重置', () => {
   const ready = createGame();
   assert.equal(ready.balance, 100);
   assert.equal(ready.endsAt, null);
   const game = startGame(ready, startedAt);
-  assert.equal(game.endsAt - game.startedAt, 600000);
+  assert.equal(game.endsAt - game.startedAt, 300000);
   assert.equal(startGame(game, startedAt + 10000), game);
+});
+test('5–10 分钟逐分钟可选，各自截止时刻与刷新恢复一致', () => {
+  assert.deepEqual(DURATION_OPTIONS, [5, 6, 7, 8, 9, 10]);
+  for (const minutes of DURATION_OPTIONS) {
+    const game = startGame(createGame(minutes), startedAt);
+    const deadline = startedAt + minutes * 60000;
+    assert.equal(game.endsAt, deadline);
+    assert.equal(checkTime(game, deadline - 1).status, 'playing');
+    assert.equal(checkTime(game, deadline).status, 'finished');
+    assert.deepEqual(restoreGame(JSON.stringify(game), startedAt + 1000), game);
+    assert.equal(restoreGame(JSON.stringify(game), deadline).finishedAt, deadline);
+  }
+});
+test('无效时长不能开始或从存档恢复', () => {
+  for (const minutes of [0, -1, 1, 4, 5.5, 11, NaN, Infinity, '5']) {
+    assert.throws(() => createGame(minutes));
+    const invalid = { ...active(), durationMs: minutes * 60000 };
+    if (minutes !== '5') assert.equal(restoreGame(JSON.stringify(invalid), startedAt + 1000), null);
+  }
+});
+test('旧版十分钟存档保持原截止时间，未开始的旧存档采用五分钟默认值', () => {
+  const game = bet(startGame(createGame(10), startedAt), 20);
+  const legacy = { ...game }; delete legacy.durationMs;
+  assert.deepEqual(restoreGame(JSON.stringify(legacy), startedAt + 1000), game);
+  assert.equal(restoreGame(JSON.stringify(legacy), startedAt + 600000).status, 'finished');
+  const ready = createGame(); delete ready.durationMs;
+  assert.equal(restoreGame(JSON.stringify(ready)).durationMs, 300000);
 });
 test('正反面均按等额盈亏结算；不会修改上一轮状态', () => {
   const initial = active();
@@ -73,7 +100,7 @@ test('随机映射恰好六个正面、四个反面，并拒绝取模余数区�
   assert.equal(randomFace(() => samples.shift()), 'tails');
   assert.equal(samples.length, 0);
 });
-test('快捷比例四舍五入、最少 1 枚且不超余额', () => {
+test('对比策略比例四舍五入、最少 1 枚且不超余额', () => {
   assert.equal(fractionBet(100, 0.2), 20);
   assert.equal(fractionBet(15, 0.1), 2);
   assert.equal(fractionBet(1, 0.1), 1);
@@ -103,7 +130,7 @@ test('刷新恢复投掷结果、金额和原截止时间', () => {
   assert.deepEqual(restored, game);
   assert.equal(restored.endsAt, startedAt + DURATION_MS);
 });
-test('刷新、后台返回超过截止时间时，立即结束且不重开十分钟', () => {
+test('刷新、后台返回超过截止时间时，立即结束且不重置倒计时', () => {
   const game = bet(active(), 20);
   const restored = restoreGame(JSON.stringify(game), startedAt + DURATION_MS + 30000);
   assert.equal(restored.status, 'finished');

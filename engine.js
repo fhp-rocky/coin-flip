@@ -1,15 +1,18 @@
 export const INITIAL_BALANCE = 100;
-export const DURATION_MS = 10 * 60 * 1000;
+export const DURATION_MS = 5 * 60 * 1000;
+export const DURATION_OPTIONS = Object.freeze([5, 6, 7, 8, 9, 10]);
 const SIDES = new Set(['heads', 'tails']);
 
-export function createGame() {
+export function createGame(durationMinutes = DURATION_MS / 60000) {
+  if (!DURATION_OPTIONS.includes(durationMinutes)) throw new Error('请选择有效的游戏时长。');
   return { version: 1, status: 'ready', balance: INITIAL_BALANCE,
+    durationMs: durationMinutes * 60000,
     startedAt: null, endsAt: null, finishedAt: null, reason: null, rounds: [] };
 }
 
 export function startGame(game, now = Date.now()) {
   if (game.status !== 'ready') return game;
-  return { ...game, status: 'playing', startedAt: now, endsAt: now + DURATION_MS };
+  return { ...game, status: 'playing', startedAt: now, endsAt: now + game.durationMs };
 }
 
 export function finishGame(game, reason = 'manual', now = Date.now()) {
@@ -76,10 +79,14 @@ export function restoreGame(raw, now = Date.now()) {
   try {
     const saved = JSON.parse(raw);
     if (saved.version !== 1 || !Array.isArray(saved.rounds) || saved.rounds.length > 10000) return null;
-    if (saved.status === 'ready') return saved.rounds.length === 0 ? createGame() : null;
+    if (saved.status === 'ready') return saved.rounds.length === 0
+      ? createGame(saved.durationMs === undefined ? undefined : saved.durationMs / 60000) : null;
+    // 兼容原版未记录 durationMs 的十分钟存档。
+    const durationMs = saved.durationMs === undefined ? 10 * 60000 : saved.durationMs;
+    if (!Number.isSafeInteger(durationMs) || !DURATION_OPTIONS.includes(durationMs / 60000)) return null;
     if (!['playing', 'finished'].includes(saved.status) || !Number.isSafeInteger(saved.startedAt)
-      || saved.startedAt < 0 || saved.endsAt !== saved.startedAt + DURATION_MS) return null;
-    let game = startGame(createGame(), saved.startedAt);
+      || saved.startedAt < 0 || saved.endsAt !== saved.startedAt + durationMs) return null;
+    let game = startGame(createGame(durationMs / 60000), saved.startedAt);
     let lastAt = saved.startedAt;
     for (const round of saved.rounds) {
       if (!Number.isSafeInteger(round.at) || round.at < lastAt || round.at >= saved.endsAt) return null;
