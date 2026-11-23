@@ -1,6 +1,6 @@
 import { createGame, startGame, finishGame, checkTime, placeBet,
-  restoreGame, getStats, getSeries, INITIAL_BALANCE } from './engine.js?v=preview-2';
-import { RESULT_IMAGE, drawResultImage } from './result-image.js?v=preview-2';
+  restoreGame, getStats, getSeries, INITIAL_BALANCE } from './engine.js?v=preview-3';
+import { RESULT_IMAGE, drawResultImage } from './result-image.js?v=preview-3';
 
 const $ = id => document.getElementById(id);
 // 测试版与正式版的进度分开，互不覆盖。
@@ -13,12 +13,13 @@ const signed = value => `${value > 0 ? '+' : value < 0 ? '−' : ''}${number(Mat
 let game = createGame();
 let selectedSide = 'heads';
 let busy = false;
+let flipPhase = 'idle';
 let showAllHistory = false;
 let rotation = 0;
 let animationTimeout;
 let revealAt = 0;
 let storageWorks = true;
-let lastInput = '20';
+let lastInput = '1';
 let playerName = '';
 let entered = false;
 let resultImage = null;
@@ -32,9 +33,11 @@ try {
     const restored = restoreGame(raw);
     if (restored) {
       game = restored;
-      const savedRevealAt = JSON.parse(raw).revealAt;
+      const saved = JSON.parse(raw);
+      const savedRevealAt = saved.revealAt;
       if (game.rounds.length && Number.isSafeInteger(savedRevealAt)
-        && savedRevealAt > Date.now() && savedRevealAt <= Date.now() + FLIP_DELAY_MS) {
+        && savedRevealAt >= game.rounds.at(-1).at && savedRevealAt <= Date.now() + FLIP_DELAY_MS
+        && (saved.flipPending === true || savedRevealAt > Date.now())) {
         busy = true;
         revealAt = savedRevealAt;
       }
@@ -71,7 +74,8 @@ function storageNotice(message) {
 
 function save() {
   try {
-    sessionStorage.setItem(KEY, JSON.stringify({ ...game, revealAt: busy ? revealAt : null }));
+    sessionStorage.setItem(KEY, JSON.stringify({ ...game,
+      revealAt: busy ? revealAt : null, flipPending: busy }));
     sessionStorage.setItem(NAME_KEY, playerName);
   }
   catch {
@@ -293,28 +297,54 @@ function saveResultImage() {
 }
 
 function completeFlip() {
-  if (!busy) return;
+  if (!busy || flipPhase === 'result') return;
   clearTimeout(animationTimeout);
   // 返回前台不会提前揭晓；即使降低动态效果，仍等待完整的 3.5 秒。
   const remaining = revealAt - Date.now();
   if (remaining > 0) { animationTimeout = setTimeout(completeFlip, remaining); return; }
-  busy = false;
-  closeModal('flip-dialog');
-  document.body.classList.remove('is-revealing');
-  $('coin-home').append($('coin-stage'));
+  flipPhase = 'result';
   $('coin-wrap').classList.remove('flipping');
   $('coin-stage').classList.remove('is-flipping');
   const last = game.rounds.at(-1);
   if (last) {
+    const won = last.delta > 0;
     setCoin(last.face);
-    setMessage(`${sideName(last.face)}！${last.delta > 0 ? '猜中了' : '下次再试'}，${signed(last.delta)} 枚`, last.delta > 0 ? 'win' : 'loss');
+    setMessage(`${sideName(last.face)}！${won ? '猜中了' : '下次再试'}，${signed(last.delta)} 枚`, won ? 'win' : 'loss');
+    $('flip-dialog').classList.add('is-result');
+    $('flip-dialog').classList.toggle('is-win', won);
+    $('flip-dialog').classList.toggle('is-loss', !won);
+    $('flip-title').textContent = won ? '猜中了！' : '这次没猜中';
+    $('flip-caption').textContent = `${sideName(last.face)}落地 · 你押的是${sideName(last.side)}`;
+    $('flip-delta').textContent = `${signed(last.delta)} 枚金币`;
+    $('flip-balance').textContent = `当前余额 ${number(game.balance)} 枚`;
+    $('flip-result').hidden = false;
+    $('flip-hint').hidden = true;
   }
   const checked = checkTime(game);
   if (checked !== game) game = checked;
   save();
   if (game.balance > 0 && amountValue() > game.balance) $('bet-input').value = String(game.balance);
   render();
+  updateFlipContinue();
+  $('flip-continue').focus({ preventScroll: true });
+}
+
+function updateFlipContinue() {
+  $('flip-continue').textContent = game.status === 'finished' ? '查看本局结果' : '继续挑战';
+}
+
+function dismissFlipResult() {
+  if (!busy || flipPhase !== 'result') return;
+  busy = false;
+  flipPhase = 'idle';
+  closeModal('flip-dialog');
+  document.body.classList.remove('is-revealing');
+  $('coin-home').append($('coin-stage'));
+  game = checkTime(game);
+  save();
+  render();
   if (game.status === 'finished') openResults();
+  else $('flip-button').focus({ preventScroll: true });
 }
 
 function tick() {
@@ -324,6 +354,7 @@ function tick() {
     game = checked;
     save();
     if (!busy) { render(); openResults(); }
+    else if (flipPhase === 'result') updateFlipContinue();
   }
   renderTimer();
 }
@@ -355,6 +386,13 @@ function flip() {
 function showFlipEffect() {
   const remaining = Math.max(0, revealAt - Date.now());
   const last = game.rounds.at(-1);
+  flipPhase = 'spinning';
+  $('flip-dialog').classList.remove('is-result');
+  $('flip-dialog').classList.remove('is-win');
+  $('flip-dialog').classList.remove('is-loss');
+  $('flip-title').textContent = '让好运，落定。';
+  $('flip-result').hidden = true;
+  $('flip-hint').hidden = false;
   $('coin-stage').style.setProperty('--flip-duration', `${remaining}ms`);
   $('coin-stage').classList.add('is-flipping');
   $('coin').classList.add('spinning');
@@ -370,7 +408,8 @@ function showFlipEffect() {
   $('bet-input').disabled = true;
   for (const button of document.querySelectorAll('[data-side], #minus-button, #plus-button, #bet-range, #download-button, #more-history')) button.disabled = true;
   setMessage('硬币正在空中，好运即将落地…');
-  animationTimeout = setTimeout(completeFlip, remaining);
+  if (remaining > 0) animationTimeout = setTimeout(completeFlip, remaining);
+  else completeFlip();
 }
 
 function downloadResults() {
@@ -406,7 +445,7 @@ $('welcome-form').addEventListener('submit', event => {
   game = startGame(createGame(Number($('duration-range').value)));
   entered = true;
   selectedSide = 'heads'; busy = false; showAllHistory = false;
-  $('bet-input').value = '20';
+  $('bet-input').value = '1';
   setCoin('heads');
   save(); render();
   setMessage('挑战开始！选好金额，扔出第一枚硬币。');
@@ -420,6 +459,7 @@ $('player-input').addEventListener('input', () => {
 $('duration-range').addEventListener('input', updateDuration);
 
 $('flip-button').addEventListener('click', flip);
+$('flip-continue').addEventListener('click', dismissFlipResult);
 $('bet-input').addEventListener('input', () => updateBet());
 $('bet-range').addEventListener('input', () => {
   if (busy || game.status === 'finished') return;
@@ -470,7 +510,7 @@ $('restart-button').addEventListener('click', () => {
   $('player-input').value = playerName;
   $('name-error').textContent = '';
   $('player-input').removeAttribute('aria-invalid');
-  $('bet-input').value = '20'; setCoin('heads');
+  $('bet-input').value = '1'; setCoin('heads');
   setMessage('新的机会，从这枚硬币开始。');
   save(); render();
   $('player-input').focus({ preventScroll: true });

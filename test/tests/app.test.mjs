@@ -10,7 +10,7 @@ const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const source = readFileSync(new URL('../app.js', import.meta.url), 'utf8')
   .replace(/^import[\s\S]*?from '[^']+';\n/gm, '');
 
-function setup({ saved = null, reducedMotion = false, initialTime = 1_800_000_000_000 } = {}) {
+function setup({ saved = null, reducedMotion = false, initialTime = 1_800_000_000_000, face = 'heads' } = {}) {
   let now = initialTime;
   let nextTimer = 0;
   const timers = new Map();
@@ -65,7 +65,7 @@ function setup({ saved = null, reducedMotion = false, initialTime = 1_800_000_00
     setInterval: (fn, delay) => schedule(fn, delay, true),
     matchMedia: () => ({ matches: reducedMotion }),
     // 确定结果，确保测试不受随机输赢影响。
-    placeBet: (game, options) => engine.placeBet(game, { ...options, now, draw: () => 'heads' }),
+    placeBet: (game, options) => engine.placeBet(game, { ...options, now, draw: () => face }),
     startGame: (game, at = now) => engine.startGame(game, at),
     finishGame: (game, reason, at = now) => engine.finishGame(game, reason, at),
     checkTime: (game, at = now) => engine.checkTime(game, at),
@@ -94,10 +94,14 @@ function setup({ saved = null, reducedMotion = false, initialTime = 1_800_000_00
 test('开始页默认五分钟，拖动时长同步文案并按所选七分钟开始', () => {
   const app = setup();
   assert.equal(app.el('duration-range').value, '5');
+  assert.equal(app.el('bet-input').value, '1');
+  assert.equal(app.el('bet-range').value, '1');
   app.start(7);
   assert.equal(app.el('duration-value').textContent, '7 分钟');
   assert.equal(app.el('timer').textContent, '07:00');
   assert.equal(app.game().durationMs, 420000);
+  assert.equal(app.el('bet-input').value, '1');
+  assert.equal(app.el('bet-range').value, '1');
 });
 test('下注滑条、输入框、加减按钮双向同步，输赢后上限跟随余额', () => {
   const app = setup(); app.start();
@@ -109,6 +113,7 @@ test('下注滑条、输入框、加减按钮双向同步，输赢后上限跟�
   app.el('flip-button').fire('click'); app.advance(3500);
   assert.equal(app.el('bet-range').max, '200');
   assert.equal(app.el('bet-maximum').textContent, '最多 200 枚');
+  app.el('flip-continue').fire('click');
   app.el('bet-input').value = '150'; app.el('bet-input').fire('input');
   app.document.querySelectorAll('[data-side]').find(e => e.dataset.side === 'tails').fire('click');
   app.el('flip-button').fire('click'); app.advance(3500);
@@ -131,10 +136,16 @@ test('3.5 秒内不揭晓、不重复下注，返回前台和减少动态效果�
     app.advance(1200); app.document.fire('visibilitychange');
     app.advance(2299); assert.equal(app.el('balance').textContent, '100');
     app.advance(1);
-    assert.equal(app.el('flip-dialog').open, false);
-    assert.equal(app.el('balance').textContent, '120');
-    assert.equal(app.el('flip-button').disabled, false);
+    assert.equal(app.el('flip-dialog').open, true);
+    assert.equal(app.el('flip-dialog').classList.contains('is-win'), true);
+    assert.equal(app.el('flip-delta').textContent, '+1 枚金币');
+    assert.equal(app.el('balance').textContent, '101');
+    assert.equal(app.el('flip-button').disabled, true);
+    app.el('flip-button').fire('click'); assert.equal(app.game().rounds.length, 1);
     assert.match(app.el('result-message').textContent, /猜中了/);
+    app.el('flip-continue').fire('click');
+    assert.equal(app.el('flip-dialog').open, false);
+    assert.equal(app.el('flip-button').disabled, false);
   }
 });
 test('截止前最后一投等待揭晓再展示结果，截止后不能再投', () => {
@@ -143,8 +154,12 @@ test('截止前最后一投等待揭晓再展示结果，截止后不能再投',
   assert.equal(app.el('timer').textContent, '00:00');
   assert.equal(app.el('result-dialog').open, false);
   app.advance(2500);
+  assert.equal(app.el('flip-dialog').open, true);
+  assert.equal(app.el('flip-continue').textContent, '查看本局结果');
+  assert.equal(app.el('result-dialog').open, false);
+  app.el('flip-continue').fire('click');
   assert.equal(app.el('result-dialog').open, true);
-  assert.equal(app.el('final-balance').textContent, '120');
+  assert.equal(app.el('final-balance').textContent, '101');
   assert.equal(app.el('end-reason').textContent, '5 分钟，挑战完成');
   app.el('flip-button').fire('click'); assert.equal(app.game().rounds.length, 1);
 });
@@ -155,9 +170,63 @@ test('刷新仍须等待本次揭晓，不重新抽样或接受下一笔下注',
   restored.el('flip-button').fire('click');
   assert.equal(restored.game().rounds.length, 1);
   restored.advance(2299); assert.equal(restored.el('flip-dialog').open, true);
-  restored.advance(1); assert.equal(restored.el('flip-dialog').open, false);
+  restored.advance(1); assert.equal(restored.el('flip-dialog').open, true);
+  assert.equal(restored.el('flip-title').textContent, '猜中了！');
   assert.equal(restored.game().rounds.length, 1);
-  assert.equal(restored.game().revealAt, null);
+  const resultReload = setup({ saved: restored.game(), initialTime: restored.time() });
+  assert.equal(resultReload.el('flip-dialog').open, true);
+  assert.equal(resultReload.el('flip-title').textContent, '猜中了！');
+  assert.equal(resultReload.el('flip-delta').textContent, '+1 枚金币');
+  resultReload.el('flip-continue').fire('click');
+  assert.equal(resultReload.el('flip-dialog').open, false);
+  assert.equal(resultReload.game().revealAt, null);
+  assert.equal(resultReload.game().flipPending, false);
+});
+test('正反两面按实际输赢呈现不同结果效果，未揭晓时不能提前继续', () => {
+  for (const face of ['heads', 'tails']) for (const side of ['heads', 'tails']) {
+    const app = setup({ face }); app.start();
+    app.document.querySelectorAll('[data-side]').find(e => e.dataset.side === side).fire('click');
+    app.el('flip-button').fire('click');
+    app.el('flip-continue').fire('click');
+    assert.equal(app.el('flip-dialog').open, true);
+    assert.equal(app.el('flip-result').hidden, true);
+    app.advance(3500);
+    const won = face === side;
+    assert.equal(app.el('flip-dialog').classList.contains('is-win'), won);
+    assert.equal(app.el('flip-dialog').classList.contains('is-loss'), !won);
+    assert.equal(app.el('flip-title').textContent, won ? '猜中了！' : '这次没猜中');
+    assert.equal(app.el('flip-delta').textContent, won ? '+1 枚金币' : '−1 枚金币');
+    assert.equal(app.el('flip-balance').textContent, `当前余额 ${won ? 101 : 99} 枚`);
+    assert.match(app.el('coin').style.transform, face === 'heads' ? /rotateY\(0deg\)/ : /rotateY\(180deg\)/);
+    assert.equal(app.el('flip-result').hidden, false);
+  }
+});
+test('破产先显示本次失败效果，再查看本局结果；重新开始默认下注一枚', () => {
+  const app = setup({ face: 'tails' }); app.start();
+  app.el('bet-input').value = '100'; app.el('bet-input').fire('input');
+  app.el('flip-button').fire('click'); app.advance(3500);
+  assert.equal(app.el('flip-title').textContent, '这次没猜中');
+  assert.equal(app.el('flip-delta').textContent, '−100 枚金币');
+  assert.equal(app.el('flip-continue').textContent, '查看本局结果');
+  assert.equal(app.el('result-dialog').open, false);
+  app.el('flip-continue').fire('click');
+  assert.equal(app.el('result-dialog').open, true);
+  assert.equal(app.el('final-balance').textContent, '0');
+  app.el('restart-button').fire('click'); app.start();
+  assert.equal(app.el('bet-input').value, '1');
+  assert.equal(app.el('bet-range').value, '1');
+});
+test('结果停留期间倒计时继续，时间到后继续按钮转为查看本局结果', () => {
+  const app = setup(); app.start();
+  app.el('flip-button').fire('click'); app.advance(3500);
+  assert.equal(app.el('flip-continue').textContent, '继续挑战');
+  app.advance(296500);
+  assert.equal(app.el('flip-dialog').open, true);
+  assert.equal(app.el('result-dialog').open, false);
+  assert.equal(app.el('flip-continue').textContent, '查看本局结果');
+  app.el('flip-continue').fire('click');
+  assert.equal(app.el('result-dialog').open, true);
+  assert.equal(app.game().rounds.length, 1);
 });
 test('余额为一时仍可下注一枚，余额减少后输入和滑条同步收窄', () => {
   const startedAt = 1_800_000_000_000;

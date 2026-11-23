@@ -201,7 +201,7 @@
 @keyframes flip-wait{to{transform:scaleX(1)}}
 @media(prefers-reduced-motion:reduce){.coin.spinning,.coin-wrap.flipping,.is-flipping .coin-halo,.is-flipping .coin-shadow,.is-flipping .flip-progress span{animation:none!important}.is-flipping .flip-progress span{transform:scaleX(1);opacity:.5}}
 
-/* 原生模态层使背景不可操作；全屏投掷效果结束后自动回到游戏。 */
+/* 原生模态层使背景不可操作；投掷后在同一全屏场景展示结果。 */
 body.is-revealing{overflow:hidden}
 .flip-overlay{position:fixed;inset:0;width:100%;max-width:none;height:100%;height:100dvh;max-height:none;margin:0;padding:24px;border:0;color:var(--text);background:radial-gradient(ellipse at 50% 43%,#26364b 0,#101b2d 43%,#0b1220 78%);overflow:auto}
 .flip-overlay[open]{display:grid;place-items:center}
@@ -219,3 +219,28 @@ body.is-revealing{overflow:hidden}
 .waiting-dots{display:inline-block;animation:waiting-breathe 1s ease-in-out infinite}
 @keyframes waiting-breathe{0%,100%{opacity:.25}50%{opacity:1}}
 @media(max-height:500px){.flip-overlay{padding:12px}.flip-overlay-content{padding:0}.flip-overlay h2{font-size:24px;margin-bottom:0}.flip-overlay .coin-stage{height:180px}.flip-overlay .coin-wrap{width:130px;height:130px}.flip-caption{margin-top:15px}.flip-overline{margin-bottom:6px}}
+
+/* 同一全屏场景直接揭晓：猜中为薄荷绿光芒，猜错为柔和珊瑚红。 */
+.flip-overlay.is-win{--outcome:#75dfb6;--outcome-rgb:117,223,182;background:radial-gradient(ellipse at 50% 38%,#204439 0,#10262a 43%,#0b1520 78%)}
+.flip-overlay.is-loss{--outcome:#ff9a9d;--outcome-rgb:255,154,157;background:radial-gradient(ellipse at 50% 38%,#452c3b 0,#251e30 43%,#101422 78%)}
+.flip-overlay.is-result h2,.is-result .flip-overline{color:var(--outcome)}
+.flip-overlay.is-result .coin-stage{height:clamp(170px,28vh,250px)}
+.flip-overlay.is-result .coin-wrap{width:clamp(140px,38vw,190px);height:clamp(140px,38vw,190px)}
+.flip-overlay.is-result .coin-halo{background:radial-gradient(ellipse,rgba(var(--outcome-rgb),.18),transparent 68%)}
+.flip-overlay.is-result .coin-shadow{bottom:12px}
+.is-result .coin-stage::before{content:"";position:absolute;width:200px;height:200px;border:1px solid rgba(var(--outcome-rgb),.3);border-radius:50%;animation:outcome-ring .8s ease-out both;pointer-events:none}
+.is-win .coin-stage::after{content:"";position:absolute;left:calc(50% - 3px);top:calc(50% - 3px);width:6px;height:6px;border-radius:50%;background:transparent;color:var(--mint);box-shadow:0 -110px,78px -78px,110px 0,78px 78px,0 110px,-78px 78px,-110px 0,-78px -78px;animation:outcome-spark .9s ease-out both;pointer-events:none}
+.is-win .coin-wrap{animation:coin-cheer .5s ease-out both}
+.is-loss .coin-wrap{animation:coin-miss .4s ease-out both}
+.flip-overlay.is-result .flip-caption{font-size:16px;color:var(--muted);margin:18px 0 10px}
+.flip-delta{font-size:clamp(30px,8vw,46px);font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--outcome);margin:0;overflow-wrap:anywhere;animation:result-arrive .35s ease-out both}
+.flip-balance{font-size:15px;color:var(--muted);margin:8px 0 0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.flip-continue{max-width:300px;min-height:50px;margin:24px auto 0;background:var(--outcome);border-color:var(--outcome);color:#152126}
+.flip-continue:hover:not(:disabled){background:var(--outcome);filter:brightness(1.08)}
+@keyframes outcome-ring{from{transform:scale(.6);opacity:0}45%{opacity:1}to{transform:scale(1.16);opacity:0}}
+@keyframes outcome-spark{from{transform:scale(.5);opacity:0}25%{opacity:.9}to{transform:scale(1.4);opacity:0}}
+@keyframes coin-cheer{0%{transform:translateY(0)}45%{transform:translateY(-13px)}100%{transform:translateY(0)}}
+@keyframes coin-miss{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}60%{transform:translateX(5px)}}
+@keyframes result-arrive{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+@media(max-height:650px){.flip-overlay.is-result{padding:12px}.is-result .flip-overlay-content{padding:8px 0}.is-result .flip-overline{margin-bottom:8px}.flip-overlay.is-result h2{font-size:26px;margin-bottom:8px}.flip-overlay.is-result .coin-stage{height:160px}.flip-overlay.is-result .coin-wrap{width:130px;height:130px}.flip-overlay.is-result .flip-caption{margin:10px 0 8px}.is-result .flip-delta{font-size:30px}.flip-continue{margin-top:16px}}
+@media(prefers-reduced-motion:reduce){.is-result .coin-stage::before,.is-result .coin-stage::after,.is-result .coin-wrap,.flip-delta{animation:none!important}.is-result .coin-stage::before,.is-result .coin-stage::after{display:none}}
