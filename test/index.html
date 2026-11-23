@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1220">
+  <meta name="description" content="100 枚金币，自选挑战时长，一枚小小的硬币。体验每一次选择，让好运遇上好策略。">
+  <title>硬币实验室 · 限时挑战</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
+  <link rel="stylesheet" href="./styles.css?v=preview-2">
+  <script type="module" src="./app.js?v=preview-2"></script>
+</head>
+<body>
+  <svg class="art-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="0" height="0"><defs>
+    <linearGradient id="gold-rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff3c0"/><stop offset=".25" stop-color="#e6b65b"/><stop offset=".49" stop-color="#a66b21"/><stop offset=".7" stop-color="#f6db94"/><stop offset="1" stop-color="#ad7528"/></linearGradient>
+    <linearGradient id="gold-face" x1=".15" y1="0" x2=".8" y2="1"><stop stop-color="#fff1bb"/><stop offset=".28" stop-color="#eaca7e"/><stop offset=".52" stop-color="#f8dfa0"/><stop offset=".76" stop-color="#d3a453"/><stop offset="1" stop-color="#e7c57c"/></linearGradient>
+    <linearGradient id="gold-back" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4dfab"/><stop offset=".36" stop-color="#cfa35e"/><stop offset=".7" stop-color="#f1d299"/><stop offset="1" stop-color="#b5813b"/></linearGradient>
+    <linearGradient id="engraving" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8c6025"/><stop offset=".5" stop-color="#b3863e"/><stop offset="1" stop-color="#78501d"/></linearGradient>
+    <pattern id="brushed-gold" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)"><path d="M0 .5h3" stroke="#fff" stroke-opacity=".085" stroke-width=".5"/></pattern>
+    <g id="coin-milling"><path d="M190.00,100.00 L194.00,100.00 M189.81,105.89 L193.80,106.15 M189.23,111.75 L193.20,112.27 M188.27,117.56 L192.19,118.34 M186.93,123.29 L190.80,124.33 M185.22,128.93 L189.01,130.22 M183.15,134.44 L186.84,135.97 M180.72,139.81 L184.31,141.58 M177.94,145.00 L181.41,147.00 M174.83,150.00 L178.16,152.22 M171.40,154.79 L174.58,157.22 M167.67,159.34 L170.67,161.98 M163.64,163.64 L166.47,166.47 M159.34,167.67 L161.98,170.67 M154.79,171.40 L157.22,174.58 M150.00,174.83 L152.22,178.16 M145.00,177.94 L147.00,181.41 M139.81,180.72 L141.58,184.31 M134.44,183.15 L135.97,186.84 M128.93,185.22 L130.22,189.01 M123.29,186.93 L124.33,190.80 M117.56,188.27 L118.34,192.19 M111.75,189.23 L112.27,193.20 M105.89,189.81 L106.15,193.80 M100.00,190.00 L100.00,194.00 M94.11,189.81 L93.85,193.80 M88.25,189.23 L87.73,193.20 M82.44,188.27 L81.66,192.19 M76.71,186.93 L75.67,190.80 M71.07,185.22 L69.78,189.01 M65.56,183.15 L64.03,186.84 M60.19,180.72 L58.42,184.31 M55.00,177.94 L53.00,181.41 M50.00,174.83 L47.78,178.16 M45.21,171.40 L42.78,174.58 M40.66,167.67 L38.02,170.67 M36.36,163.64 L33.53,166.47 M32.33,159.34 L29.33,161.98 M28.60,154.79 L25.42,157.22 M25.17,150.00 L21.84,152.22 M22.06,145.00 L18.59,147.00 M19.28,139.81 L15.69,141.58 M16.85,134.44 L13.16,135.97 M14.78,128.93 L10.99,130.22 M13.07,123.29 L9.20,124.33 M11.73,117.56 L7.81,118.34 M10.77,111.75 L6.80,112.27 M10.19,105.89 L6.20,106.15 M10.00,100.00 L6.00,100.00 M10.19,94.11 L6.20,93.85 M10.77,88.25 L6.80,87.73 M11.73,82.44 L7.81,81.66 M13.07,76.71 L9.20,75.67 M14.78,71.07 L10.99,69.78 M16.85,65.56 L13.16,64.03 M19.28,60.19 L15.69,58.42 M22.06,55.00 L18.59,53.00 M25.17,50.00 L21.84,47.78 M28.60,45.21 L25.42,42.78 M32.33,40.66 L29.33,38.02 M36.36,36.36 L33.53,33.53 M40.66,32.33 L38.02,29.33 M45.21,28.60 L42.78,25.42 M50.00,25.17 L47.78,21.84 M55.00,22.06 L53.00,18.59 M60.19,19.28 L58.42,15.69 M65.56,16.85 L64.03,13.16 M71.07,14.78 L69.78,10.99 M76.71,13.07 L75.67,9.20 M82.44,11.73 L81.66,7.81 M88.25,10.77 L87.73,6.80 M94.11,10.19 L93.85,6.20 M100.00,10.00 L100.00,6.00 M105.89,10.19 L106.15,6.20 M111.75,10.77 L112.27,6.80 M117.56,11.73 L118.34,7.81 M123.29,13.07 L124.33,9.20 M128.93,14.78 L130.22,10.99 M134.44,16.85 L135.97,13.16 M139.81,19.28 L141.58,15.69 M145.00,22.06 L147.00,18.59 M150.00,25.17 L152.22,21.84 M154.79,28.60 L157.22,25.42 M159.34,32.33 L161.98,29.33 M163.64,36.36 L166.47,33.53 M167.67,40.66 L170.67,38.02 M171.40,45.21 L174.58,42.78 M174.83,50.00 L178.16,47.78 M177.94,55.00 L181.41,53.00 M180.72,60.19 L184.31,58.42 M183.15,65.56 L186.84,64.03 M185.22,71.07 L189.01,69.78 M186.93,76.71 L190.80,75.67 M188.27,82.44 L192.19,81.66 M189.23,88.25 L193.20,87.73 M189.81,94.11 L193.80,93.85" stroke="#83551e" stroke-opacity=".55" stroke-width="1.1" stroke-linecap="round"/></g>
+    <g id="coin-laurel" fill="none" stroke="#a77b35" stroke-width="1.2" stroke-linecap="round"><path d="M68 145C43 128 41 98 56 76"/><path d="M51 86q-8-2-9-10q9 2 9 10m-5 15q-9-4-10-12q10 3 10 12m1 16q-10-3-12-11q10 0 12 11m5 14q-10 1-15-7q10-3 15 7m10 11q-10 5-16-2q9-6 16 2M48 95q9-1 12-10q-10 0-12 10m-2 16q10-3 11-12q-9 3-11 12m4 15q9-5 9-14q-9 5-9 14m9 14q7-7 4-15q-8 7-4 15" fill="#ba914b" fill-opacity=".36"/></g>
+    <g id="coin-base"><circle cx="100" cy="102" r="96" fill="#86591f"/><circle cx="100" cy="100" r="96" fill="url(#gold-rim)" stroke="#e7c279" stroke-width="1.4"/><circle cx="100" cy="100" r="88" fill="none" stroke="#f8e5ac" stroke-width="1.4"/><use href="#coin-milling"/></g>
+    <g id="coin-details"><circle cx="100" cy="100" r="80" fill="url(#brushed-gold)"/><circle cx="100" cy="100" r="80" fill="none" stroke="#fff0b9" stroke-width="1.5"/><circle cx="100" cy="100" r="77" fill="none" stroke="#99702e" stroke-opacity=".65" stroke-width=".8"/><circle cx="100" cy="100" r="72" fill="none" stroke="#a47b36" stroke-opacity=".4" stroke-width="1" stroke-dasharray="1 4"/><use href="#coin-laurel"/><use href="#coin-laurel" transform="translate(200 0) scale(-1 1)"/><path d="m100 36 2.4 5 5.6.8-4 4 1 5.5-5-2.6-5 2.6 1-5.5-4-4 5.6-.8Z" fill="#a67b35"/><path d="M59 157q41 18 82 0" fill="none" stroke="#ffefb7" stroke-opacity=".7"/><path d="m54 53 90 86" stroke="#fff9d9" stroke-width="12" opacity=".055"/></g>
+    <g id="coin-heads"><use href="#coin-base"/><circle cx="100" cy="100" r="85" fill="url(#gold-face)"/><use href="#coin-details"/><text x="101" y="125" text-anchor="middle" font-family="Songti SC, STSong, serif" font-size="62" font-weight="700" fill="#fff0b7">正</text><text x="100" y="124" text-anchor="middle" font-family="Songti SC, STSong, serif" font-size="62" font-weight="700" fill="url(#engraving)">正</text><text x="100" y="64" text-anchor="middle" font-size="7.5" letter-spacing="2" fill="#8b622a">幸运始于选择</text><text x="100" y="151" text-anchor="middle" font-size="10" letter-spacing="2" fill="#805921">正面</text></g>
+    <g id="coin-tails"><use href="#coin-base"/><circle cx="100" cy="100" r="85" fill="url(#gold-back)"/><use href="#coin-details"/><text x="101" y="125" text-anchor="middle" font-family="Songti SC, STSong, serif" font-size="62" font-weight="700" fill="#fce4ac">反</text><text x="100" y="124" text-anchor="middle" font-family="Songti SC, STSong, serif" font-size="62" font-weight="700" fill="url(#engraving)">反</text><text x="100" y="64" text-anchor="middle" font-size="7.5" letter-spacing="2" fill="#805921">每一面皆有可能</text><text x="100" y="151" text-anchor="middle" font-size="10" letter-spacing="2" fill="#805921">反面</text></g>
+  </defs></svg>
+
+  <div class="app-shell">
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="硬币实验室首页">
+        <img src="./assets/icon.svg" width="34" height="34" alt="">
+        <span>硬币实验室<span class="brand-divider">/</span><small>测试版</small></span>
+      </a>
+      <div class="header-actions"><span class="player-badge" id="player-badge" hidden><span class="player-avatar" aria-hidden="true"></span><span id="player-name"></span></span><button class="text-button rules-button" id="rules-button" hidden><span class="help-icon" aria-hidden="true">?</span>玩法说明</button></div>
+    </header>
+
+
+    <main id="welcome-screen" class="welcome-screen">
+      <div class="welcome-story">
+        <p class="eyebrow">一枚硬币，一场小小的实验</p>
+        <h1>让一点好运，<br><em>遇上你的策略。</em></h1>
+        <p class="welcome-description">不是每一次都能猜中，<br>但每一次，你都可以决定投入多少。</p>
+        <div class="welcome-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="welcome-glow"></div><svg class="welcome-back-coin" viewBox="0 0 200 200"><use href="#coin-tails"/></svg><svg class="welcome-front-coin" viewBox="0 0 200 200"><use href="#coin-heads"/></svg><span class="art-spark spark-one">✦</span><span class="art-spark spark-two">✦</span><div class="odds-note"><span>一枚偏心的硬币</span><strong>60<small>%</small></strong><span>正面出现概率</span></div></div>
+        <p class="welcome-signoff"><span></span>有时候，选择比运气更有趣。</p>
+      </div>
+      <section class="panel welcome-card" aria-labelledby="welcome-title">
+        <span class="welcome-kicker">你的限时挑战</span>
+        <h2 id="welcome-title">准备好了吗？</h2>
+        <p class="welcome-card-intro">留下你的名字，开始这场关于选择的游戏。</p>
+        <form id="welcome-form" novalidate>
+          <label for="player-input" class="name-label">你的昵称</label>
+          <input id="player-input" name="nickname" type="text" maxlength="20" placeholder="怎么称呼你？" autocomplete="nickname" enterkeyhint="go" aria-describedby="name-error">
+          <p id="name-error" class="name-error" role="alert"></p>
+          <div class="duration-field">
+            <div class="duration-heading"><label for="duration-range">挑战时长</label><output id="duration-value" for="duration-range">5 分钟</output></div>
+            <input id="duration-range" class="range-control" type="range" name="duration" min="5" max="10" step="1" value="5" aria-valuetext="5 分钟">
+            <div class="range-labels"><span>5 分钟</span><span>10 分钟</span></div>
+          </div>
+          <div class="welcome-facts"><div><strong>100<small> 枚</small></strong><span>初始金币</span></div><div><strong><span data-duration-minutes>5</span><small> 分钟</small></strong><span>挑战时长</span></div><div><strong>1<small> 枚</small></strong><span>最小下注</span></div></div>
+          <div class="welcome-rules"><h3>规则很简单</h3><ul>
+            <li><span class="rule-dot" aria-hidden="true"></span><p><strong>选正面或反面，再决定下注多少。</strong><span>正面概率 60%，反面 40%，每次独立随机。</span></p></li>
+            <li><span class="rule-dot" aria-hidden="true"></span><p><strong>猜中赚等额金币，猜错扣除下注。</strong><span>只能下注整数，至少 1 枚，最多为当前余额。</span></p></li>
+            <li><span class="rule-dot" aria-hidden="true"></span><p><strong>时间结束后，看看你的策略表现。</strong><span>时间到、金币用完或主动结束，都会结算。</span></p></li>
+          </ul></div>
+          <button type="submit" class="primary-button welcome-start"><span>开始挑战</span><span class="start-clock" id="start-clock">05:00</span></button>
+          <p class="welcome-fineprint">点击后开始计时，切换后台不暂停。<br>仅使用虚拟金币 · 昵称只保存在当前浏览器标签页</p>
+        </form>
+      </section>
+    </main>
+
+    <main id="game-screen" hidden>
+      <div class="intro">
+        <div><p class="eyebrow">一点运气，一点策略</p><h1>每一次选择，都算数<span>。</span></h1></div>
+        <p class="intro-note">100 枚金币，<span data-duration-minutes>5</span> 分钟。<br>你能让它走多远？</p>
+      </div>
+
+      <div class="game-layout">
+        <section class="panel score-card" aria-label="本局概况">
+          <div class="section-top"><span class="muted">当前余额 <span class="unit">/ 金币</span></span><span class="status-label" id="game-status">准备就绪</span></div>
+          <div class="balance-line"><strong id="balance">100</strong><span class="profit-tag" id="profit">初始 100</span></div>
+          <div class="score-bottom">
+            <div class="timer-block"><span class="small-label">剩余时间</span><strong id="timer" role="timer" aria-label="剩余时间 5 分钟">05:00</strong></div>
+            <div class="rounds-block"><span class="small-label">已投掷</span><strong><span id="round-count">0</span><small> 次</small></strong></div>
+          </div>
+          <div class="time-track" aria-hidden="true"><div id="time-progress"></div></div>
+        </section>
+
+        <button class="end-session-button" id="end-button" disabled>
+          <span class="end-session-icon" aria-hidden="true"><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.6"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor"/></svg></span>
+          <span class="end-session-copy"><strong>结束本局</strong><small>结算当前成绩，看看你的策略表现</small></span>
+        </button>
+
+        <section class="panel play-card" aria-label="扔硬币">
+          <div class="section-top"><span class="play-caption" id="play-caption">准备好，试试你的策略</span></div>
+          <div id="coin-home"><div class="coin-stage" id="coin-stage" aria-hidden="true">
+            <div class="coin-halo"></div>
+            <div class="coin-wrap" id="coin-wrap"><div class="coin" id="coin">
+              <div class="coin-face coin-front"><svg viewBox="0 0 200 200"><use href="#coin-heads"/></svg></div>
+              <div class="coin-face coin-back"><svg viewBox="0 0 200 200"><use href="#coin-tails"/></svg></div>
+            </div></div>
+            <div class="coin-shadow"></div>
+            <div class="flip-progress"><span></span></div>
+          </div></div>
+          <p class="result-message" id="result-message" role="status" aria-live="polite">选择一面，决定这一次的投入。</p>
+
+          <fieldset class="side-picker" id="side-picker"><legend class="sr-only">选择下注的一面</legend>
+            <button type="button" class="side-button selected" data-side="heads" aria-pressed="true"><span><i class="side-symbol" aria-hidden="true">正</i>押正面</span><span class="side-check"><i class="selection-mark" aria-hidden="true">✓</i></span></button>
+            <button type="button" class="side-button" data-side="tails" aria-pressed="false"><span><i class="side-symbol" aria-hidden="true">反</i>押反面</span><span class="side-check"><i class="selection-mark" aria-hidden="true">✓</i></span></button>
+          </fieldset>
+
+          <div class="bet-label"><label for="bet-input">下注金额</label><span id="bet-share">每次调整 1 枚</span></div>
+          <div class="bet-stepper"><button type="button" id="minus-button" aria-label="下注减少 1 枚">−</button><div class="bet-input-wrap"><input id="bet-input" type="text" inputmode="numeric" pattern="[0-9]*" value="20" autocomplete="off" enterkeyhint="done" aria-describedby="bet-error"><span>枚</span></div><button type="button" id="plus-button" aria-label="下注增加 1 枚">+</button></div>
+          <div class="bet-slider">
+            <label for="bet-range" class="sr-only">拖动调整下注金额</label>
+            <input id="bet-range" class="range-control" type="range" min="1" max="100" step="1" value="20" aria-valuetext="20 枚金币">
+            <div class="range-labels"><span>1 枚</span><span id="bet-maximum">最多 100 枚</span></div>
+          </div>
+          <p class="bet-error" id="bet-error" role="alert"></p>
+          <button class="primary-button flip-button" id="flip-button"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v8m-3-6h6m-6 4h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span id="flip-label">开始游戏</span></button>
+          <p class="play-footnote" id="play-footnote">点击开始后计时 · 猜中赚取等额金币</p>
+        </section>
+
+        <section class="panel chart-card" aria-label="余额变化图">
+          <div class="section-top"><h2>余额轨迹</h2><span class="chart-label" id="chart-caption">从 100 开始</span></div>
+          <div class="chart" id="main-chart"></div>
+          <div class="chart-legend" id="main-legend"><span><i class="legend-player"></i>你的余额</span><span class="baseline-label">虚线为初始余额</span></div>
+        </section>
+
+        <section class="panel history-card" aria-label="投掷记录">
+          <div class="section-top"><div class="history-title"><h2>每一次选择</h2><span class="count-badge" id="history-count">0</span></div><button class="text-button" id="download-button" disabled>导出记录</button></div>
+          <div id="history-empty" class="empty-history"><svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true"><path d="M7 22V15m8 7V7m8 15V11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>故事，从第一枚硬币开始。</span></div>
+          <div class="table-scroll" id="history-table-wrap" hidden><table><thead><tr><th>轮次</th><th>你的选择</th><th>下注</th><th>结果</th><th>盈亏</th><th>余额</th></tr></thead><tbody id="history-body"></tbody></table></div>
+          <button id="more-history" class="more-history" hidden>查看全部记录</button>
+        </section>
+      </div>
+      <p class="storage-notice" id="storage-notice" role="status" hidden></p>
+    </main>
+    <footer><span>一枚硬币，无数种可能。</span><span>仅使用虚拟金币 · 灵感来自 <a href="https://elmwealth.com/coin-flip/" target="_blank" rel="noopener noreferrer">Elm Wealth</a></span></footer>
+  </div>
+
+  <dialog id="flip-dialog" class="flip-overlay" aria-labelledby="flip-title" aria-describedby="flip-caption" aria-modal="true">
+    <div class="flip-overlay-content">
+      <p class="flip-overline" id="flip-round">硬币已抛出</p>
+      <h2 id="flip-title">让好运，落定。</h2>
+      <div id="flip-stage-host"></div>
+      <p class="flip-caption" id="flip-caption">等待硬币落地…</p>
+      <p class="flip-hint">结果即将揭晓<span class="waiting-dots" aria-hidden="true"> · · ·</span></p>
+    </div>
+  </dialog>
+
+  <dialog id="rules-dialog" class="modal rules-modal" aria-labelledby="rules-title">
+    <div class="modal-top"><span class="eyebrow">开始前，用一分钟了解</span><button class="close-button" data-close="rules-dialog" aria-label="关闭玩法说明">×</button></div>
+    <h2 id="rules-title">小硬币，大不同。</h2><p class="modal-intro">一枚略微偏向正面的硬币，你来决定每次投入多少。</p>
+    <div class="rule-facts"><div><strong>100</strong><span>初始金币</span></div><div><strong><span data-duration-minutes>5</span><small> 分钟</small></strong><span>每局时长</span></div><div><strong>60<small>%</small></strong><span>正面概率</span></div></div>
+    <ol class="rules-list"><li><strong>选一面，再下一个决定</strong><span>押正面或反面，拖动滑条或输入整数金额；最低 1 枚，最多为当前余额。加减按钮每次调整 1 枚。</span></li><li><strong>每一次，都是新的机会</strong><span>正面概率 60%，反面概率 40%，各轮独立。猜中净赚下注金额，猜错扣除下注金额。</span></li><li><strong>时间结束后，看见你的策略</strong><span>填写昵称并点击“开始挑战”后计时。时间到、余额归零或主动结束时结算。截止前已接受的投掷会正常结算。</span></li></ol>
+    <p class="rules-note">进度保存在当前标签页，刷新可继续；切换后台不会暂停倒计时。不同设备各玩各的。游戏只使用虚拟金币。</p>
+    <button class="primary-button" data-close="rules-dialog">知道了，来试试</button>
+    <p class="attribution">玩法灵感来自 Elm Wealth，本站独立制作，与其无关联。</p>
+  </dialog>
+
+  <dialog id="confirm-dialog" class="modal confirm-modal" aria-labelledby="confirm-title"><div class="modal-top"><span class="eyebrow">给这次挑战画个句号</span><button class="close-button" data-close="confirm-dialog" aria-label="关闭结束确认">×</button></div><h2 id="confirm-title">现在结束本局？</h2><p class="modal-intro">保留当前成绩，看看你的策略表现。确认期间倒计时仍会继续。</p><div class="dialog-actions"><button class="secondary-button" data-close="confirm-dialog">继续挑战</button><button class="primary-button" id="confirm-end">结束并结算</button></div></dialog>
+
+  <dialog id="result-dialog" class="modal result-modal" aria-labelledby="result-title"><div class="modal-top"><span class="eyebrow" id="end-reason">挑战完成</span><button class="close-button" data-close="result-dialog" aria-label="关闭结果，查看记录">×</button></div><p class="result-player" id="result-player"></p><h2 id="result-title">每一次尝试，都有收获。</h2><div class="result-balance"><strong id="final-balance">100</strong><span>枚金币</span><span class="profit-tag" id="final-profit">持平</span></div><div class="result-stats"><div><strong id="final-count">0</strong><span>投掷次数</span></div><div><strong id="final-win-rate">—</strong><span>猜中比例</span></div><div><strong id="final-heads-rate">—</strong><span>正面出现比例</span></div></div><div class="result-chart" id="result-chart"></div><div class="strategy-grid"><div><span><i class="legend-player"></i>你的策略</span><strong id="strategy-player">100</strong></div><div><span><i class="legend-ten"></i>固定 10%</span><strong id="strategy-ten">100</strong></div><div><span><i class="legend-twenty"></i>固定 20%</span><strong id="strategy-twenty">100</strong></div></div><p class="strategy-note">同一组硬币结果作比较：固定比例策略始终押正面，每轮下注当时余额的 10% 或 20%，四舍五入取整，最低 1 枚；余额为零后停止。</p><div class="result-actions">
+      <button class="primary-button save-result-button" id="save-result-button"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.7"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><path d="m4 17 5-5 3 3 4-5 5 7" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span id="save-result-label">保存结果</span><span class="image-format-tag">图片</span></button>
+      <div class="result-image-links"><p class="image-save-message" id="image-save-message" role="status" aria-live="polite"></p><button class="text-button" id="preview-image-button" hidden>查看图片 · 手机可长按保存</button></div>
+      <div class="dialog-actions"><button class="secondary-button" id="result-download">导出数据 CSV</button><button class="secondary-button" id="restart-button">再来一局</button></div>
+    </div></dialog>
+  <dialog id="result-image-dialog" class="modal image-preview-modal" aria-labelledby="image-preview-title">
+    <div class="modal-top"><h2 id="image-preview-title">保存你的战绩</h2><button class="close-button" data-close="result-image-dialog" aria-label="关闭图片，返回结果">×</button></div>
+    <p class="image-preview-note">手机可以长按下面的图片保存，也可以点击“下载图片”。</p>
+    <img id="result-preview-image" class="result-preview-image" alt="本局昵称、最终余额、统计数据和策略对比图片">
+    <div class="dialog-actions"><button class="secondary-button" data-close="result-image-dialog">返回结果</button><a class="primary-button" id="preview-image-download" download>下载图片</a></div>
+  </dialog>
+  <noscript><div class="noscript">请在浏览器中启用 JavaScript 后体验游戏。</div></noscript>
+</body>
+</html>
