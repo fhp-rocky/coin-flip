@@ -7,8 +7,8 @@
   <meta name="description" content="100 枚金币，自选挑战时长，一枚小小的硬币。体验每一次选择，让好运遇上好策略。">
   <title>硬币实验室 · 限时挑战</title>
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
-  <link rel="stylesheet" href="./styles.css?v=release-20261124">
-  <script type="module" src="./app.js?v=release-20261124"></script>
+  <link rel="stylesheet" href="./styles.css?v=release-recent-10">
+  <script type="module" src="./app.js?v=release-recent-10"></script>
 </head>
 <body>
   <svg class="art-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="0" height="0"><defs>
@@ -102,6 +102,11 @@
             <div class="flip-progress"><span></span></div>
           </div></div>
           <p class="result-message" id="result-message" role="status" aria-live="polite">选择一面，决定这一次的投入。</p>
+
+          <section class="recent-results" aria-labelledby="recent-title">
+            <div class="recent-heading"><h2 id="recent-title">最近 10 次</h2><span id="recent-hint">投掷后显示</span></div>
+            <ol class="recent-strip" id="recent-strip" aria-label="最近十次硬币结果"></ol>
+          </section>
 
           <fieldset class="side-picker" id="side-picker"><legend class="sr-only">选择下注的一面</legend>
             <button type="button" class="side-button selected" data-side="heads" aria-pressed="true"><span><i class="side-symbol" aria-hidden="true">正</i>押正面</span><span class="side-check"><i class="selection-mark" aria-hidden="true">✓</i></span></button>
