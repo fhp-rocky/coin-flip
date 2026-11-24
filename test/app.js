@@ -1,6 +1,6 @@
 import { createGame, startGame, finishGame, checkTime, placeBet,
-  restoreGame, getStats, getSeries, INITIAL_BALANCE } from './engine.js?v=preview-3';
-import { RESULT_IMAGE, drawResultImage } from './result-image.js?v=preview-3';
+  restoreGame, getStats, getSeries, INITIAL_BALANCE } from './engine.js?v=preview-4';
+import { RESULT_IMAGE, drawResultImage } from './result-image.js?v=preview-4';
 
 const $ = id => document.getElementById(id);
 // 测试版与正式版的进度分开，互不覆盖。
@@ -158,6 +158,32 @@ function renderChart(target, comparisons = false) {
   target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${comparisons ? '你的余额与固定比例策略的比较' : '你的余额变化'}，共 ${game.rounds.length} 次投掷，当前余额 ${game.balance} 枚"><defs><linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#75dfb6" stop-opacity=".12"/><stop offset="1" stop-color="#75dfb6" stop-opacity="0"/></linearGradient></defs>${grid}<line x1="${left}" y1="${y(INITIAL_BALANCE)}" x2="${width - right}" y2="${y(INITIAL_BALANCE)}" stroke="#9aa9bd55" stroke-dasharray="4 5"/><path d="${area}" fill="url(#${gradientId})"/>${paths}${player.length > 1 ? `<circle cx="${x(player.length - 1)}" cy="${y(player.at(-1))}" r="4" fill="#75dfb6" stroke="#142134" stroke-width="2"/>` : ''}<text x="${left}" y="${height - 6}" fill="#8595ab" font-size="12">开始</text><text x="${width - right}" y="${height - 6}" text-anchor="end" fill="#8595ab" font-size="12">${game.rounds.length ? `第 ${game.rounds.length} 次` : '等待第一次投掷'}</text></svg>`;
 }
 
+function renderRecentResults() {
+  // 等动画揭晓后再展示最后一次；刷新恢复时也不提前露出结果。
+  const count = Math.max(0, game.rounds.length - (busy && flipPhase !== 'result' ? 1 : 0));
+  const visible = Math.min(10, count);
+  const fragment = document.createDocumentFragment();
+  for (let slot = 0; slot < 10; slot++) {
+    const item = document.createElement('li');
+    const index = count - 10 + slot;
+    if (index < 0) {
+      item.className = 'recent-face is-empty';
+      item.textContent = '·';
+      item.setAttribute('aria-hidden', 'true');
+    } else {
+      const face = game.rounds[index].face;
+      const latest = index === count - 1;
+      item.className = `recent-face ${face}${latest ? ' is-latest' : ''}`;
+      item.textContent = face === 'heads' ? '正' : '反';
+      item.setAttribute('aria-label', `第 ${index + 1} 次：${sideName(face)}${latest ? '，最新' : ''}`);
+    }
+    fragment.append(item);
+  }
+  $('recent-strip').replaceChildren(fragment);
+  $('recent-strip').setAttribute('aria-label', count ? `最近 ${visible} 次硬币结果，从左到右由旧到新` : '尚无投掷结果');
+  $('recent-hint').textContent = count ? '左旧 · 右新' : '投掷后显示';
+}
+
 function renderHistory() {
   const count = game.rounds.length;
   $('history-count').textContent = number(count);
@@ -210,6 +236,7 @@ function render() {
   renderChart($('main-chart'), finished);
   $('main-legend').innerHTML = finished ? '<span><i class="legend-player"></i>你的余额</span><span><i class="legend-ten"></i>固定 10%</span><span><i class="legend-twenty"></i>固定 20%</span>' : '<span><i class="legend-player"></i>你的余额</span><span class="baseline-label">虚线为初始余额</span>';
   renderHistory();
+  renderRecentResults();
 }
 
 function setCoin(face) {

@@ -244,3 +244,17 @@ body.is-revealing{overflow:hidden}
 @keyframes result-arrive{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
 @media(max-height:650px){.flip-overlay.is-result{padding:12px}.is-result .flip-overlay-content{padding:8px 0}.is-result .flip-overline{margin-bottom:8px}.flip-overlay.is-result h2{font-size:26px;margin-bottom:8px}.flip-overlay.is-result .coin-stage{height:160px}.flip-overlay.is-result .coin-wrap{width:130px;height:130px}.flip-overlay.is-result .flip-caption{margin:10px 0 8px}.is-result .flip-delta{font-size:30px}.flip-continue{margin-top:16px}}
 @media(prefers-reduced-motion:reduce){.is-result .coin-stage::before,.is-result .coin-stage::after,.is-result .coin-wrap,.flip-delta{animation:none!important}.is-result .coin-stage::before,.is-result .coin-stage::after{display:none}}
+
+/* 一行十枚，最新在最右侧；颜色只区分硬币面，不表示输赢。 */
+.recent-results{margin:0 0 20px;padding:14px;border:1px solid #edc47e50;border-radius:13px;background:linear-gradient(125deg,#edc47e0d,#0b1525 65%);box-shadow:inset 0 1px 0 #edc47e10}
+.recent-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.recent-heading h2{margin:0;color:var(--gold);font-size:15px;font-weight:600;letter-spacing:.04em}
+.recent-heading>span{font-size:12px;color:var(--muted);white-space:nowrap}
+.recent-strip{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;margin:0;padding:0;list-style:none}
+.recent-face{display:grid;place-items:center;min-width:0;height:40px;border:1px solid #ffffff16;border-radius:8px;font-size:18px;font-weight:600;line-height:1}
+.recent-face.heads{background:#edc47e24;border-color:#edc47e55;color:#f8dca8}
+.recent-face.tails{background:#b4a4ed22;border-color:#b4a4ed55;color:#d7ccff}
+.recent-face.is-empty{background:#ffffff03;border-color:#ffffff0b;color:#5c6c82;font-weight:400}
+.recent-face.is-latest{border-color:#ffde9f;box-shadow:0 0 0 1px #ffde9f,0 0 14px #edc47e26}
+@media(max-width:700px){.recent-results{margin-bottom:14px;padding:11px 9px}.recent-heading{margin-bottom:10px}.recent-strip{gap:4px}.recent-face{height:34px;font-size:16px;border-radius:6px}}
+@media(max-width:360px){.recent-strip{gap:3px}.recent-heading h2{font-size:14px}}
